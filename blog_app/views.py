@@ -42,7 +42,10 @@ def index(request):
 
 def detail(request, post_id):
    post = get_object_or_404(Post, id=post_id)
-   return render(request, 'blog_app/detail.html', {'post': post})
+   liked = False
+   if post.like.filter(id=request.user.id).exists():
+       liked = True
+   return render(request, 'blog_app/detail.html', {'post': post, 'liked': liked})
 
 @login_required
 def add(request):
@@ -84,7 +87,13 @@ def like(request):
    else:    
        post.like.add(request.user)
        liked = True
-   return redirect('blog_app:detail', post_id=post.id) 
+   context={
+       'post': post,
+       'liked': liked,
+   }    
+   if request.is_ajax():
+       html = render_to_string('blog_app/like.html', context, request=request )
+       return JsonResponse({'form': html})
 
 def contact(request):
    if request.method == 'POST':
